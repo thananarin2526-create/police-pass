@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>POLICE PASS v12.1</title>
+  <title>POLICE PASS v12.2</title>
   <style>
     :root{--n:#102f55;--b:#2464da;--bg:#f4f7fb;--line:#e4e9f0;--m:#697586;--g:#0a8f55;--r:#c62828}
     *{box-sizing:border-box}
@@ -35,8 +35,8 @@
 <body>
 <header>
   <div class="wrap top">
-    <div class="brand">POLICE PASS v12.1<small>1,000 Questions & Adaptive Learning</small></div>
-    <div id="userBar">Guest</div>
+    <div class="brand">POLICE PASS v12.2<small>Admin Question Center & Adaptive Learning</small></div>
+    <div><span id="userBar">Guest</span> <button id="btnLogout" class="btn soft">ออกจากระบบ</button></div>
   </div>
 </header>
 
@@ -49,6 +49,7 @@
     <button data-page="ai">🤖 AI Tutor</button>
     <button data-page="wrong">📕 สมุดข้อผิด</button>
     <button data-page="plan">📅 แผน 30 วัน</button>
+    <button data-page="qcenter">🗂️ Question Center</button>
     <button data-page="review">✅ Review Queue</button>
   </aside>
 
@@ -123,6 +124,63 @@
         <button id="btnMakePlan" class="btn primary">สร้างจากจุดอ่อนของฉัน</button>
         <button id="btnLoadPlan" class="btn soft">เปิดแผนล่าสุด</button>
         <div id="planBox"></div>
+      </div>
+    </section>
+
+
+    <section id="qcenter" class="page">
+      <div class="card">
+        <h2>Admin Question Center</h2>
+        <div id="qcStats" class="grid4"></div>
+        <div class="grid2">
+          <div>
+            <input id="qcSearch" placeholder="ค้นหาโจทย์ / stable key">
+            <select id="qcSubjectFilter"><option value="">ทุกวิชา</option></select>
+            <select id="qcStatusFilter">
+              <option value="">ทุกสถานะ</option><option>draft</option><option>review</option>
+              <option>published</option><option>rejected</option><option>outdated</option>
+            </select>
+            <button id="btnQcLoad" class="btn soft">ค้นหา</button>
+          </div>
+          <div>
+            <button id="btnQcNew" class="btn primary">+ เพิ่มข้อสอบ</button>
+            <label class="btn soft">นำเข้า CSV <input id="qcCsvFile" type="file" accept=".csv,text/csv" hidden></label>
+          </div>
+        </div>
+        <div id="qcImportResult"></div>
+        <div id="qcList"></div>
+      </div>
+
+      <div id="qcEditor" class="card" hidden>
+        <h2 id="qcEditorTitle">เพิ่มข้อสอบ</h2>
+        <input id="qId" type="hidden">
+        <div class="grid2">
+          <div>
+            <label>Stable key</label><input id="qStableKey" placeholder="MATH-PCT-001">
+            <label>วิชา</label><select id="qSubject"></select>
+            <label>หัวข้อ</label><input id="qTopic" placeholder="ร้อยละ">
+            <label>ระดับ</label><select id="qDifficulty"><option>easy</option><option selected>medium</option><option>hard</option></select>
+          </div>
+          <div>
+            <label>แหล่งอ้างอิง/หมายเหตุ</label><input id="qSourceNote" placeholder="แหล่งที่มา / หมายเหตุ">
+            <label>URL แหล่งอ้างอิง</label><input id="qSourceUrl" placeholder="https://...">
+            <p class="muted">ข้อกฎหมาย/ข้อมูลการสอบจริงควรมีแหล่งอ้างอิงที่ตรวจสอบได้ก่อน Publish</p>
+          </div>
+        </div>
+        <label>คำถาม</label><textarea id="qText" rows="3"></textarea>
+        <div class="grid2">
+          <input id="qA" placeholder="A">
+          <input id="qB" placeholder="B">
+          <input id="qC" placeholder="C">
+          <input id="qD" placeholder="D">
+        </div>
+        <label>คำตอบที่ถูก</label>
+        <select id="qCorrect"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select>
+        <label>คำอธิบาย</label><textarea id="qExplanation" rows="3"></textarea>
+        <button id="btnQSave" class="btn primary">บันทึก Draft</button>
+        <button id="btnQSubmitReview" class="btn dark">ส่งตรวจ</button>
+        <button id="btnQCancel" class="btn soft">ปิด</button>
+        <div id="qEditorStatus"></div>
       </div>
     </section>
 
