@@ -270,9 +270,124 @@ async function decision(id, d) {
   loadReview();
 }
 
+
+function logout(){
+  access='';
+  localStorage.removeItem('pp11_access');
+  $('userBar').textContent='Guest';
+  setStatus('ออกจากระบบแล้ว',true);
+  go('home');
+}
+
+async function loadQuestionCenter(){
+  try{
+    const stats=await api('/api/admin/content-stats');
+    const countBy=Object.fromEntries(stats.questions.map(x=>[x.status,x.count]));
+    $('qcStats').innerHTML=[
+      ['Published',countBy.published||0],['Review',countBy.review||0],
+      ['Draft',countBy.draft||0],['Outdated',countBy.outdated||0]
+    ].map(x=>`<div class="card metric"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('');
+    const subjects=stats.subjects||[];
+    const opts='<option value="">ทุกวิชา</option>'+subjects.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+    $('qcSubjectFilter').innerHTML=opts;
+    $('qSubject').innerHTML=subjects.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+    await qcLoad();
+  }catch(e){
+    $('qcList').innerHTML='<div class="bad">Question Center สำหรับ Editor/Reviewer/Admin เท่านั้น: '+e.message+'</div>';
+  }
+}
+
+async function qcLoad(){
+  const p=new URLSearchParams();
+  if($('qcSearch').value.trim())p.set('search',$('qcSearch').value.trim());
+  if($('qcSubjectFilter').value)p.set('subject',$('qcSubjectFilter').value);
+  if($('qcStatusFilter').value)p.set('status',$('qcStatusFilter').value);
+  p.set('limit','100');
+  const j=await api('/api/admin/questions?'+p.toString());
+  $('qcList').innerHTML=`<p class="muted">พบ ${j.total} ข้อ</p>`+j.items.map(q=>`
+    <div class="item">
+      <strong>${q.stable_key}</strong> • ${q.subject_name||q.subject_id} • ${q.topic||'-'} • ${q.difficulty||'-'}
+      <br><span class="muted">${q.status}</span> — ${q.question_text}
+      <br><button class="btn soft qc-edit" data-id="${q.id}">แก้ไข</button>
+      ${['draft','rejected'].includes(q.status)?`<button class="btn dark qc-submit" data-id="${q.id}">ส่งตรวจ</button>`:''}
+      ${q.status==='published'?`<button class="btn soft qc-outdate" data-id="${q.id}">ทำเป็น Outdated</button>`:''}
+    </div>`).join('');
+}
+
+function qcNew(){
+  ['qId','qStableKey','qTopic','qSourceNote','qSourceUrl','qText','qA','qB','qC','qD','qExplanation'].forEach(id=>$(id).value='');
+  $('qDifficulty').value='medium'; $('qCorrect').value='0';
+  $('qcEditorTitle').textContent='เพิ่มข้อสอบใหม่';
+  $('qcEditor').hidden=false; $('qEditorStatus').innerHTML='';
+  $('btnQSubmitReview').disabled=true;
+}
+
+async function qcEdit(id){
+  const q=await api('/api/admin/questions/'+id);
+  $('qId').value=q.id; $('qStableKey').value=q.stable_key; $('qSubject').value=q.subject_id;
+  $('qTopic').value=q.topic||''; $('qDifficulty').value=q.difficulty||'medium';
+  $('qSourceNote').value=q.source_note||''; $('qSourceUrl').value=q.source_url||'';
+  $('qText').value=q.question_text; $('qA').value=q.option_a; $('qB').value=q.option_b;
+  $('qC').value=q.option_c; $('qD').value=q.option_d; $('qCorrect').value=String(q.correct_option);
+  $('qExplanation').value=q.explanation||''; $('qcEditorTitle').textContent='แก้ไข '+q.stable_key;
+  $('qcEditor').hidden=false; $('qEditorStatus').innerHTML='';
+  $('btnQSubmitReview').disabled=!['draft','rejected'].includes(q.status);
+}
+
+function qPayload(){
+  return {
+    stable_key:$('qStableKey').value,subject_id:$('qSubject').value,topic:$('qTopic').value,
+    difficulty:$('qDifficulty').value,question_text:$('qText').value,
+    option_a:$('qA').value,option_b:$('qB').value,option_c:$('qC').value,option_d:$('qD').value,
+    correct_option:Number($('qCorrect').value),explanation:$('qExplanation').value,
+    source_note:$('qSourceNote').value,source_url:$('qSourceUrl').value
+  };
+}
+
+async function qcSave(){
+  try{
+    const id=$('qId').value;
+    const q=await api(id?'/api/admin/questions/'+id:'/api/admin/questions',{
+      method:id?'PATCH':'POST',body:JSON.stringify(qPayload())
+    });
+    $('qId').value=q.id;
+    $('qEditorStatus').innerHTML='<div class="good">บันทึก Draft สำเร็จ</div>';
+    $('btnQSubmitReview').disabled=false;
+    await qcLoad(); await loadQuestionCenter();
+  }catch(e){$('qEditorStatus').innerHTML='<div class="bad">บันทึกไม่สำเร็จ: '+e.message+'</div>'}
+}
+
+async function qcSubmit(id){
+  const qid=id||$('qId').value;
+  if(!qid)return;
+  await api('/api/admin/questions/'+qid+'/submit-review',{method:'POST',body:'{}'});
+  $('qEditorStatus').innerHTML='<div class="good">ส่งเข้าคิว Review แล้ว</div>';
+  await qcLoad(); await loadQuestionCenter();
+}
+
+async function qcOutdate(id){
+  if(!confirm('ยืนยันทำข้อสอบนี้เป็น Outdated?'))return;
+  await api('/api/admin/questions/'+id+'/outdate',{method:'POST',body:'{}'});
+  await qcLoad(); await loadQuestionCenter();
+}
+
+async function qcImportFile(file){
+  try{
+    const csv=await file.text();
+    const r=await api('/api/admin/import-csv',{method:'POST',body:JSON.stringify({csv_text:csv})});
+    $('qcImportResult').innerHTML=`<div class="good">นำเข้า ${r.inserted}/${r.total} แถว</div>`+
+      (r.errors.length?`<pre>${JSON.stringify(r.errors,null,2)}</pre>`:'');
+    await qcLoad(); await loadQuestionCenter();
+  }catch(e){$('qcImportResult').innerHTML='<div class="bad">Import ไม่สำเร็จ: '+e.message+'</div>'}
+}
+
 function bindEvents() {
   document.querySelectorAll('.nav button').forEach(b => {
-    b.addEventListener('click', () => go(b.dataset.page));
+    b.addEventListener('click', async () => {
+      go(b.dataset.page);
+      if(b.dataset.page==='qcenter') await loadQuestionCenter();
+      if(b.dataset.page==='review') await loadReview();
+    });
   });
 
   $('btnLogin').addEventListener('click', login);
@@ -286,6 +401,13 @@ function bindEvents() {
   $('btnMakePlan').addEventListener('click', makePlan);
   $('btnLoadPlan').addEventListener('click', loadPlan);
   $('btnReview').addEventListener('click', loadReview);
+  $('btnLogout').addEventListener('click', logout);
+  $('btnQcLoad').addEventListener('click', qcLoad);
+  $('btnQcNew').addEventListener('click', qcNew);
+  $('btnQSave').addEventListener('click', qcSave);
+  $('btnQSubmitReview').addEventListener('click', ()=>qcSubmit());
+  $('btnQCancel').addEventListener('click', ()=>{$('qcEditor').hidden=true});
+  $('qcCsvFile').addEventListener('change', e=>{if(e.target.files[0])qcImportFile(e.target.files[0])});
   $('subject').addEventListener('change', loadTopics);
 
   document.addEventListener('click', async (event) => {
@@ -308,6 +430,9 @@ function bindEvents() {
       await bookmark(t.dataset.id);
       return;
     }
+    if(t.classList.contains('qc-edit')){await qcEdit(t.dataset.id);return;}
+    if(t.classList.contains('qc-submit')){await qcSubmit(t.dataset.id);return;}
+    if(t.classList.contains('qc-outdate')){await qcOutdate(t.dataset.id);return;}
     if (t.classList.contains('review-decision')) {
       await decision(t.dataset.id, t.dataset.decision);
     }
