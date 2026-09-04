@@ -1,0 +1,15 @@
+{
+  "edition": "v12",
+  "curated_published_questions": 50,
+  "review_required_candidates": 950,
+  "total_content_records": 1000,
+  "policy": "Only curated/reviewer-approved questions should be published. Candidate records are a production queue, not claimed as 950 validated unique exam questions.",
+  "features": [
+    "adaptive sessions",
+    "wrong-answer notebook",
+    "bookmarks",
+    "30-day study plan",
+    "streak",
+    "non-repeat preference"
+  ]
+}

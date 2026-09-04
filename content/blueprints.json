@@ -1,0 +1,56 @@
+{
+  "pretest": {
+    "name": "Pre-test 20 ข้อ",
+    "total_questions": 20,
+    "duration_minutes": 25,
+    "rules": [
+      {
+        "subject_id": "math",
+        "question_count": 5
+      },
+      {
+        "subject_id": "thai",
+        "question_count": 4
+      },
+      {
+        "subject_id": "english",
+        "question_count": 4
+      },
+      {
+        "subject_id": "computer",
+        "question_count": 4
+      },
+      {
+        "subject_id": "law",
+        "question_count": 3
+      }
+    ]
+  },
+  "mock": {
+    "name": "Mock Exam 50 ข้อ",
+    "total_questions": 50,
+    "duration_minutes": 60,
+    "rules": [
+      {
+        "subject_id": "math",
+        "question_count": 15
+      },
+      {
+        "subject_id": "thai",
+        "question_count": 10
+      },
+      {
+        "subject_id": "english",
+        "question_count": 10
+      },
+      {
+        "subject_id": "computer",
+        "question_count": 10
+      },
+      {
+        "subject_id": "law",
+        "question_count": 5
+      }
+    ]
+  }
+}
