@@ -1,5 +1,0 @@
-
-const express=require('express');const {q}=require('../db');const {sign,hp,cp}=require('../services/security');const router=express.Router();
-router.post('/register',async(req,res,next)=>{try{const {name,email,password}=req.body||{};if(!name||!email||!password||password.length<8)return res.status(400).json({error:'invalid_fields'});if((await q('select id from users where lower(email)=lower($1)',[email])).rowCount)return res.status(409).json({error:'email_exists'});const u=(await q("insert into users(name,email,password_hash,role,plan) values($1,$2,$3,'student','FREE') returning id,name,email,role,plan",[name,email.toLowerCase(),hp(password)])).rows[0];res.json({user:u,access_token:sign(u)})}catch(e){next(e)}});
-router.post('/login',async(req,res,next)=>{try{const {email,password}=req.body||{};const u=(await q('select * from users where lower(email)=lower($1)',[email||''])).rows[0];if(!u||!cp(password||'',u.password_hash))return res.status(401).json({error:'invalid_credentials'});res.json({user:{id:u.id,name:u.name,email:u.email,role:u.role,plan:u.plan},access_token:sign(u)})}catch(e){next(e)}});
-module.exports=router;
